@@ -1,49 +1,38 @@
-# Invoicing API challenge
+# Clippings documents calculation
 
-Design Technologies challenges you to create an API (PHP / Java application) that lets you sum invoice documents in different currencies via a file.
+## Setup and running the application
 
-This is a small task to evaluate potential hires.
+- copy .env.example as .env
+- run `docker-compose up --build`
+- run `docker-compose exec app bash` to enter the app container
+  - `composer install` to install dependencies
+  - `php artisan key:generate` to generate key for Laravel
+  - `php artisan migrate` to migrate the tables
 
-## The task
+### Running tests
+execute `./vendor/bin/phpunit` in the app container ( command `docker-compose exec app bash` can be used to enter the container )
 
-We have a **CSV** file, containing a list of invoices, debit and credit notes in different
-currencies. **Document structure** with **demo data** can be found in the [`data.csv` file](./data.csv).
+### Hitting the application
+App will be available at:
 
-API endpoint should allow you to pass:
-- CSV file
-- A list of currencies and exchange rates (for example: `EUR:1,USD:0.987,GBP:0.878`)
-- An output currency (for example: `GBP`)
-- Filter by a specific customer by VAT number (as an optional input)
+http://localhost:8088/api/v1/sumInvoices
 
-Keep in mind that the exchange rates are always based on the default currency.  
-The default currency is specified by giving it an exchange rate of 1. EUR is used as a default currency only for the example.  
-For example:
-```
-EUR = 1  
-EUR:USD = 0.987  
-EUR:GBP = 0.878
-```
+filtering could be done with request parameter as follows:
+- http://localhost:8088/api/v1/sumInvoices?vat=123456789
 
-The response should contain **the sum of all documents per customer**. If the optional input filter is used, the functionality should **return only the sum of the
-invoices for that specific customer**.
+### Issues
+- preg match for input is not correct in the assignment
+  - incorrect one: `^([\w]){3}:\d*(.\d+)*$` (outputs as valid `1.8Y9`)
+  - correct one: `^([\w]){3}:(\d+(?:[\.\,]\d*)?)$`
 
-Invoice types:
-- 1 = invoice
-- 2 = credit note
-- 3 = debit note
+- outputCurrency uses different pattern than the response currency
+  - ^([\w]){3}$
+  - ^([A-Z]){3}$
 
-Note, that if we have a credit note, it should subtract from the total of the invoice and if we have a debit note, it should add to the sum of the invoice.
+- provided exchange rates are not in valid json format
+
+- why do we have baseCurrency? we can calculate the indexes even if no base currency is set
 
 
-## Requirements
-
-- The application MUST use only in memory storage.
-- The application MUST comply to the PSR-2 coding standard and use a PSR-4 autoloader (for PHP applications).
-- The application MUST be covered by unit tests.
-- The application MUST support different currencies.
-- The application MUST validate the input (for example: show an error if an unsupported currency is passed; show an error if a document has a specified parent, but the parent is missing, etc.)
-- OOP best practices MUST be followed.
-- The application MUST be supplied in a public git repository.
-- Setup instructions MUST be provided.
-- Your application MUST be fully compatible with the provided [`openapi.yaml` file](./openapi.yaml) definition.
-- Optional: the application should have a client side, implemented in any modern JavaScript framework (e.g. React.js, Angular.js, etc.)
+## Extensions ideas
+- return different types of messages for different validation errors
